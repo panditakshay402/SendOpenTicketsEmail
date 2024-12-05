@@ -13,9 +13,7 @@ namespace SendOpenTicketsEmail
         static void Main(string[] args)
         {
             string connectionString = ConfigurationManager.ConnectionStrings["IMSConnectionString"].ConnectionString;
-
             var filteredCCFs = GetFilteredCCFs(connectionString);
-
 
             if (filteredCCFs.Any())
             {
@@ -49,7 +47,6 @@ namespace SendOpenTicketsEmail
                         {
                             var ccf = new OpenCCF
                             {
-
                                 ClientName = reader["ClientName"].ToString(),
                                 Subject = reader["Subject"].ToString(),
                                 RaisedDate = reader["RaisedDate"] as DateTime?,
@@ -69,7 +66,6 @@ namespace SendOpenTicketsEmail
         {
             var emailBody = new StringBuilder();
 
-            // Introduction section
             emailBody.AppendLine("<h3>Dear Team,</h3>");
             emailBody.AppendLine("<p>Please find below the list of open CCFs as of the latest update. These tickets are currently being reviewed and need attention. Kindly review and take the necessary actions.</p>");
 
@@ -81,10 +77,10 @@ namespace SendOpenTicketsEmail
             emailBody.AppendLine("<tr style='background-color: #f4f4f4; color: #333;'>");
             emailBody.AppendLine("<th style='text-align: left; padding: 8px; width: 20%;'>Client Name</th>");
             emailBody.AppendLine("<th style='text-align: left; padding: 8px; width: 25%;'>Subject</th>");
-            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 10%;'>Raised Date</th>");  // Reduced width
-            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 9%;'>CCF No.</th>");     // Reduced width
-            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 9%;'>Ticket Id</th>");  // Reduced width
-            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 8%;'>Status</th>");    // Reduced width
+            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 10%;'>Raised Date</th>");
+            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 9%;'>CCF No.</th>");
+            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 9%;'>Ticket Id</th>");
+            emailBody.AppendLine("<th style='text-align: center; padding: 8px; width: 8%;'>Status</th>");
             emailBody.AppendLine("</tr>");
 
             // Loop to add each CCF's details in the table
@@ -107,22 +103,30 @@ namespace SendOpenTicketsEmail
             emailBody.AppendLine("<p>Should you need further details or have any questions regarding these open tickets, please do not hesitate to reach out.</p>");
             emailBody.AppendLine("<p>Best Regards,<br>Your Support Team</p>");
 
+            // Retrieve SMTP settings from app.config
+            var smtpHost = ConfigurationManager.AppSettings["SMTPHost"];
+            var smtpPort = int.Parse(ConfigurationManager.AppSettings["SMTPPort"]);
+            var smtpUsername = ConfigurationManager.AppSettings["SMTPUsername"];
+            var smtpPassword = ConfigurationManager.AppSettings["SMTPPassword"];
+            var emailFrom = ConfigurationManager.AppSettings["EmailFrom"];
+            var emailTo = ConfigurationManager.AppSettings["EmailTo"];
+
             // Create and configure the email message
             var mailMessage = new MailMessage
             {
-                From = new MailAddress("equiflow.equitec@gmail.com"),
+                From = new MailAddress(emailFrom),
                 Subject = "Weekly Open Tickets Report",  // Updated email subject
                 Body = emailBody.ToString(),
                 IsBodyHtml = true
             };
-            mailMessage.To.Add("heyaaru2000@gmail.com");
+            mailMessage.To.Add(emailTo);
 
             // SMTP client setup
-            var smtpClient = new SmtpClient("smtp.gmail.com")
+            var smtpClient = new SmtpClient(smtpHost)
             {
-                Port = 587,
-                Credentials = new System.Net.NetworkCredential("equiflow.equitec@gmail.com", "eiiw nkki ezag gasb"),
-                EnableSsl = true
+                Port = smtpPort,
+                Credentials = new System.Net.NetworkCredential(smtpUsername, smtpPassword),
+                EnableSsl = bool.Parse(ConfigurationManager.AppSettings["SMTPSsl"])
             };
 
             try
@@ -135,7 +139,5 @@ namespace SendOpenTicketsEmail
                 Console.WriteLine($"Error sending email: {ex.Message}");
             }
         }
-
     }
-
 }
